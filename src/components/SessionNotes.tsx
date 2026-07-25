@@ -58,13 +58,14 @@ export function SessionNotes({ notes, onNotesChange, onEndSession, ending }: Ses
           <h3>AI Assist</h3>
           {engineStatus !== 'ready' && (
             <p className="session-analysis-placeholder">
-              Waiting for the local AI to finish loading — themes and suggested questions
-              will appear here once it's ready.
+              Waiting for the local AI to finish loading — themes, suggested questions,
+              and things you could say will appear here once it's ready.
             </p>
           )}
           {engineStatus === 'ready' && !notes.trim() && (
             <p className="session-analysis-placeholder">
-              Start typing notes to see themes and suggested questions.
+              Start typing notes to see themes, suggested questions, and supportive things
+              you could say to the student.
             </p>
           )}
           {engineStatus === 'ready' && notes.trim() && !analysis && (
