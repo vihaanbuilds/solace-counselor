@@ -139,7 +139,10 @@ export default function App() {
     return (
       <div className="onboarding-screen">
         <div className="onboarding-card glass-strong">
-          <h1 className="brand-title">Solace Counselor</h1>
+          <h1 className="brand-title">
+            <span className="brand-cursive">Solace</span>{' '}
+            <span className="brand-suffix">for Counselors</span>
+          </h1>
           <p className="disclaimer-text">
             <strong>Prototype — not for use with real student records yet.</strong> This
             tool is a working demo, not reviewed for compliance with FERPA or your
@@ -181,7 +184,10 @@ export default function App() {
             >
               {sidebarCollapsed ? '☰' : '⟨'}
             </button>
-            <h1 className="brand-title">Solace Counselor</h1>
+            <h1 className="brand-title">
+              <span className="brand-cursive">Solace</span>{' '}
+              <span className="brand-suffix">for Counselors</span>
+            </h1>
           </div>
           <div className="app-header-controls">
             <AiStatusIndicator />
