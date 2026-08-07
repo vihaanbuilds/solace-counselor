@@ -4,6 +4,8 @@ import { StudentView } from './components/StudentView';
 import { ThemeToggle } from './components/ThemeToggle';
 import { AiStatusIndicator } from './components/AiStatusIndicator';
 import { AiLoadingBanner } from './components/AiLoadingBanner';
+import { AmbientBackground } from './components/AmbientBackground';
+import { CursiveReveal } from './components/CursiveReveal';
 import { isCrisis } from './lib/emotions/crisisDetection';
 import { getSessionSummary } from './lib/ai/analysis';
 import {
@@ -34,7 +36,9 @@ export default function App() {
   const [acknowledged, setAcknowledged] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => loadSidebarCollapsed());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => loadSidebarCollapsed() || window.matchMedia('(max-width: 768px)').matches
+  );
   const [ending, setEnding] = useState(false);
 
   useEffect(() => {
@@ -65,16 +69,24 @@ export default function App() {
     saveStudents(next);
   }
 
+  function closeSidebarOnMobile() {
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      setSidebarCollapsed(true);
+    }
+  }
+
   function handleNewStudent() {
     const fresh = createStudent();
     persist([fresh, ...students]);
     setActiveStudentId(fresh.id);
     saveActiveStudentId(fresh.id);
+    closeSidebarOnMobile();
   }
 
   function handleSelectStudent(id: string) {
     setActiveStudentId(id);
     saveActiveStudentId(id);
+    closeSidebarOnMobile();
   }
 
   function handleRenameStudent(id: string, name: string) {
@@ -138,9 +150,10 @@ export default function App() {
   if (!acknowledged) {
     return (
       <div className="onboarding-screen">
+        <AmbientBackground />
         <div className="onboarding-card glass-strong">
           <h1 className="brand-title">
-            <span className="brand-cursive">Solace</span>{' '}
+            <CursiveReveal variant="solace" className="cursive-reveal-hero" />
             <span className="brand-suffix">for Counselors</span>
           </h1>
           <p className="disclaimer-text">
@@ -164,6 +177,14 @@ export default function App() {
 
   return (
     <div className="app-layout">
+      <AmbientBackground />
+      {!sidebarCollapsed && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarCollapsed(true)}
+          aria-hidden="true"
+        />
+      )}
       <Sidebar
         students={students}
         activeStudentId={activeStudentId}
@@ -185,7 +206,7 @@ export default function App() {
               {sidebarCollapsed ? '☰' : '⟨'}
             </button>
             <h1 className="brand-title">
-              <span className="brand-cursive">Solace</span>{' '}
+              <CursiveReveal variant="solace" className="cursive-reveal-header" />
               <span className="brand-suffix">for Counselors</span>
             </h1>
           </div>
@@ -205,6 +226,7 @@ export default function App() {
           />
         ) : (
           <div className="empty-state">
+            <CursiveReveal variant="solace" className="cursive-reveal-empty" />
             <p>Add a student from the sidebar to start a session.</p>
           </div>
         )}

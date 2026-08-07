@@ -40,3 +40,22 @@ Object.defineProperty(globalThis, 'localStorage', {
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function scrollIntoView() {};
 }
+
+// jsdom does not implement matchMedia; polyfill with a static "no match" result
+// so responsive/reduced-motion checks (e.g. mobile sidebar default, prefers-
+// reduced-motion) don't throw. Tests that care about a specific match can
+// override window.matchMedia themselves.
+if (!window.matchMedia) {
+  window.matchMedia = function matchMedia(query: string): MediaQueryList {
+    return {
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    };
+  };
+}

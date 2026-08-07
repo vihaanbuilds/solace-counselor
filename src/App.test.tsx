@@ -98,7 +98,8 @@ describe('App', () => {
     await acknowledgeDisclaimer(user);
     await user.click(screen.getByText('+ New student'));
 
-    await user.click(within(getSidebar()).getByLabelText(/^Rename/));
+    await user.click(within(getSidebar()).getByLabelText(/^Options for/));
+    await user.click(screen.getByRole('menuitem', { name: /rename/i }));
     const input = screen.getByLabelText('Rename student');
     await user.clear(input);
     await user.type(input, 'J.D.{Enter}');
@@ -113,7 +114,8 @@ describe('App', () => {
     await acknowledgeDisclaimer(user);
     await user.click(screen.getByText('+ New student'));
 
-    await user.click(within(getSidebar()).getByLabelText(/^Delete/));
+    await user.click(within(getSidebar()).getByLabelText(/^Options for/));
+    await user.click(screen.getByRole('menuitem', { name: /delete/i }));
 
     expect(loadStudents()).toHaveLength(0);
     expect(screen.getByText(/add a student from the sidebar/i)).toBeInTheDocument();
