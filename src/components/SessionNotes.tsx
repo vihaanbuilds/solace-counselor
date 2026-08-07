@@ -92,7 +92,9 @@ export function SessionNotes({ notes, onNotesChange, onEndSession, ending }: Ses
         setVoiceError(
           message === 'not-allowed'
             ? 'Microphone access was blocked — allow it in your browser settings to use voice notetaking.'
-            : `Voice notetaking stopped: ${message}`
+            : message === 'restart-failed'
+              ? 'Voice notetaking lost the mic and could not reconnect — click "Start listening" to resume.'
+              : `Voice notetaking stopped: ${message}`
         );
         setListening(false);
         notetakerRef.current = null;

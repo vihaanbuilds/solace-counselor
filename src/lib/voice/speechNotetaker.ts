@@ -35,6 +35,20 @@ export function createSpeechNotetaker(handlers: SpeechNotetakerHandlers): Speech
   recognition.lang = 'en-US';
 
   let shouldBeListening = false;
+  let restartTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  function attemptRestart() {
+    if (!shouldBeListening) return;
+    try {
+      recognition.start();
+    } catch {
+      // The delay below should be enough for Chrome's teardown to finish;
+      // if it still fails, don't leave the UI stuck showing "listening"
+      // over a dead session — surface it so the counselor can retry.
+      shouldBeListening = false;
+      handlers.onError?.('restart-failed');
+    }
+  }
 
   recognition.onresult = (event) => {
     let interim = '';
@@ -57,13 +71,15 @@ export function createSpeechNotetaker(handlers: SpeechNotetakerHandlers): Speech
 
   recognition.onend = () => {
     if (shouldBeListening) {
-      // Some browsers end the session after a period of silence even in
-      // continuous mode; restart transparently unless the user stopped it.
-      try {
-        recognition.start();
-      } catch {
-        // Already starting/started — ignore.
-      }
+      // Chrome (and other Chromium browsers) frequently end the session
+      // right after each finalized utterance, even with continuous:true.
+      // Calling start() synchronously here throws InvalidStateError because
+      // the previous session hasn't finished tearing down yet, so the
+      // restart is deferred to the next tick to give that teardown time to
+      // finish — without this, the retry silently fails and nothing said
+      // after the first utterance ever gets captured again.
+      if (restartTimeoutId !== null) clearTimeout(restartTimeoutId);
+      restartTimeoutId = setTimeout(attemptRestart, 300);
     } else {
       handlers.onEnd?.();
     }
@@ -80,6 +96,10 @@ export function createSpeechNotetaker(handlers: SpeechNotetakerHandlers): Speech
     },
     stop() {
       shouldBeListening = false;
+      if (restartTimeoutId !== null) {
+        clearTimeout(restartTimeoutId);
+        restartTimeoutId = null;
+      }
       recognition.stop();
     },
   };
