@@ -6,6 +6,48 @@ import { SessionNotes } from './SessionNotes';
 import * as analysisModule from '../lib/ai/analysis';
 import * as webllmEngine from '../lib/ai/webllmEngine';
 
+class FakeSpeechRecognition {
+  static instances: FakeSpeechRecognition[] = [];
+  continuous = false;
+  interimResults = false;
+  lang = '';
+  started = false;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null = null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null = null;
+  onend: (() => void) | null = null;
+
+  constructor() {
+    FakeSpeechRecognition.instances.push(this);
+  }
+
+  start() {
+    this.started = true;
+  }
+
+  stop() {
+    this.started = false;
+    this.onend?.();
+  }
+
+  abort() {
+    this.started = false;
+  }
+}
+
+function finalResultEvent(transcript: string): SpeechRecognitionEvent {
+  return {
+    resultIndex: 0,
+    results: { length: 1, 0: { isFinal: true, length: 1, 0: { transcript } } },
+  } as unknown as SpeechRecognitionEvent;
+}
+
+function interimResultEvent(transcript: string): SpeechRecognitionEvent {
+  return {
+    resultIndex: 0,
+    results: { length: 1, 0: { isFinal: false, length: 1, 0: { transcript } } },
+  } as unknown as SpeechRecognitionEvent;
+}
+
 function ControlledSessionNotes({
   initialNotes = '',
   onEndSession = () => {},
@@ -96,5 +138,91 @@ describe('SessionNotes', () => {
     render(<ControlledSessionNotes initialNotes="Some notes" onEndSession={onEndSession} />);
     await user.click(screen.getByText('End session'));
     expect(onEndSession).toHaveBeenCalled();
+  });
+
+  describe('voice notetaking', () => {
+    afterEach(() => {
+      delete window.SpeechRecognition;
+      FakeSpeechRecognition.instances = [];
+    });
+
+    it('disables the mic button when the browser has no SpeechRecognition support', () => {
+      render(<ControlledSessionNotes />);
+      expect(screen.getByRole('button', { name: /start listening/i })).toBeDisabled();
+    });
+
+    it('starts listening and appends a finalized transcript segment to the notes', async () => {
+      const user = userEvent.setup();
+      window.SpeechRecognition = FakeSpeechRecognition as unknown as new () => SpeechRecognition;
+      render(<ControlledSessionNotes />);
+
+      await user.click(screen.getByRole('button', { name: /start listening/i }));
+      expect(screen.getByRole('button', { name: /stop listening/i })).toBeInTheDocument();
+
+      const recognition = FakeSpeechRecognition.instances[0];
+      act(() => {
+        recognition.onresult?.(finalResultEvent('I feel anxious about school'));
+      });
+
+      expect(screen.getByLabelText('Session notes')).toHaveValue('I feel anxious about school ');
+    });
+
+    it('appends further segments after existing notes with a separating space', async () => {
+      const user = userEvent.setup();
+      window.SpeechRecognition = FakeSpeechRecognition as unknown as new () => SpeechRecognition;
+      render(<ControlledSessionNotes initialNotes="Earlier note." />);
+
+      await user.click(screen.getByRole('button', { name: /start listening/i }));
+      const recognition = FakeSpeechRecognition.instances[0];
+      act(() => {
+        recognition.onresult?.(finalResultEvent('Next thing said.'));
+      });
+
+      expect(screen.getByLabelText('Session notes')).toHaveValue('Earlier note. Next thing said. ');
+    });
+
+    it('shows a live interim preview without committing it to the notes yet', async () => {
+      const user = userEvent.setup();
+      window.SpeechRecognition = FakeSpeechRecognition as unknown as new () => SpeechRecognition;
+      render(<ControlledSessionNotes />);
+
+      await user.click(screen.getByRole('button', { name: /start listening/i }));
+      const recognition = FakeSpeechRecognition.instances[0];
+      act(() => {
+        recognition.onresult?.(interimResultEvent('still talking'));
+      });
+
+      expect(screen.getByText(/still talking/)).toBeInTheDocument();
+      expect(screen.getByLabelText('Session notes')).toHaveValue('');
+    });
+
+    it('stops listening when the button is clicked again', async () => {
+      const user = userEvent.setup();
+      window.SpeechRecognition = FakeSpeechRecognition as unknown as new () => SpeechRecognition;
+      render(<ControlledSessionNotes />);
+
+      await user.click(screen.getByRole('button', { name: /start listening/i }));
+      const recognition = FakeSpeechRecognition.instances[0];
+      expect(recognition.started).toBe(true);
+
+      await user.click(screen.getByRole('button', { name: /stop listening/i }));
+      expect(recognition.started).toBe(false);
+      expect(screen.getByRole('button', { name: /start listening/i })).toBeInTheDocument();
+    });
+
+    it('shows a permission error and stops listening when the mic is blocked', async () => {
+      const user = userEvent.setup();
+      window.SpeechRecognition = FakeSpeechRecognition as unknown as new () => SpeechRecognition;
+      render(<ControlledSessionNotes />);
+
+      await user.click(screen.getByRole('button', { name: /start listening/i }));
+      const recognition = FakeSpeechRecognition.instances[0];
+      act(() => {
+        recognition.onerror?.({ error: 'not-allowed' } as SpeechRecognitionErrorEvent);
+      });
+
+      expect(screen.getByRole('alert')).toHaveTextContent(/microphone access was blocked/i);
+      expect(screen.getByRole('button', { name: /start listening/i })).toBeInTheDocument();
+    });
   });
 });

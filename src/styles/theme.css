@@ -389,6 +389,7 @@ select {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   padding: 0 1.25rem 1.25rem;
 }
 
@@ -493,6 +494,7 @@ select {
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
+  min-height: 0;
 }
 
 .student-name {
@@ -530,9 +532,11 @@ select {
 /* Session notes */
 
 .session-notes {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-height: 0;
 }
 
 .crisis-flag-banner {
@@ -548,12 +552,95 @@ select {
 .session-notes-layout {
   display: flex;
   gap: 0.75rem;
-  min-height: 260px;
+  flex-shrink: 0;
+}
+
+.session-notes-main {
+  flex: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.notes-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 1.8rem;
+}
+
+.mic-toggle-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-accent-2);
+  background: color-mix(in srgb, var(--color-sky-blue) 18%, transparent);
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+:root[data-theme='dark'] .mic-toggle-btn {
+  color: var(--color-sky-blue);
+}
+
+.mic-toggle-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.mic-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mic-toggle-btn-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-sky-blue), var(--color-accent-2));
+}
+
+.listening-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--color-text-soft);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listening-dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #e5484d;
+  animation: listening-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes listening-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.voice-error-text {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-danger);
 }
 
 .session-notes-textarea {
-  flex: 2;
   min-width: 0;
+  min-height: 160px;
+  max-height: 55vh;
   padding: 0.9rem;
   border-radius: 0.9rem;
   border: 1px solid var(--color-border);
@@ -561,7 +648,8 @@ select {
   font-family: inherit;
   font-size: 0.9rem;
   line-height: 1.5;
-  resize: vertical;
+  overflow-y: auto;
+  resize: none;
 }
 
 .session-analysis-panel {
@@ -571,6 +659,18 @@ select {
   border-radius: 0.9rem;
   font-size: 0.85rem;
   overflow-y: auto;
+}
+
+.session-notes-canvas {
+  flex: 1;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cursive-reveal-canvas .cursive-reveal-svg {
+  height: 6rem;
 }
 
 .session-analysis-panel h3 {
@@ -717,14 +817,10 @@ select {
 
   .session-notes-layout {
     flex-direction: column;
-    min-height: 0;
   }
 
-  .session-notes-textarea {
-    min-height: 160px;
-  }
-
-  .cursive-reveal-empty .cursive-reveal-svg {
+  .cursive-reveal-empty .cursive-reveal-svg,
+  .cursive-reveal-canvas .cursive-reveal-svg {
     height: 3rem;
   }
 }
